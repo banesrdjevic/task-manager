@@ -1,5 +1,6 @@
 const express = require('express');
 const { db, rowToTask } = require('../database');
+const { notifyWebhooks } = require('../webhooks');
 
 const router = express.Router();
 
@@ -29,7 +30,13 @@ router.post('/', (req, res) => {
     return res.status(400).json({ error: 'title is required' });
   }
   const row = insertStmt.get(title);
-  res.status(201).json(rowToTask(row));
+  const task = rowToTask(row);
+  notifyWebhooks({
+    event: 'task.created',
+    data: task,
+    timestamp: new Date().toISOString(),
+  });
+  res.status(201).json(task);
 });
 
 router.put('/:id', (req, res) => {
@@ -43,7 +50,13 @@ router.put('/:id', (req, res) => {
   }
   const nextCompleted = existing.completed ? 0 : 1;
   const row = updateCompletionStmt.get(nextCompleted, id);
-  res.json(rowToTask(row));
+  const task = rowToTask(row);
+  notifyWebhooks({
+    event: 'task.updated',
+    data: task,
+    timestamp: new Date().toISOString(),
+  });
+  res.json(task);
 });
 
 router.delete('/:id', (req, res) => {
@@ -55,6 +68,11 @@ router.delete('/:id', (req, res) => {
   if (info.changes === 0) {
     return res.status(404).json({ error: 'task not found' });
   }
+  notifyWebhooks({
+    event: 'task.deleted',
+    data: { id },
+    timestamp: new Date().toISOString(),
+  });
   res.json({ message: 'Task deleted' });
 });
 

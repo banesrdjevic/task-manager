@@ -1,9 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from './api';
 import './App.css';
 import TaskList from './components/TaskList';
 import AddTask from './components/AddTask';
 import NewsFeed from './components/NewsFeed';
+
+const SSE_BASE_URL = import.meta.env.DEV
+  ? 'http://localhost:3001'
+  : api.defaults.baseURL;
 
 function App() {
   const [activeTab, setActiveTab] = useState('tasks');
@@ -12,23 +16,55 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchTasks = useCallback(async () => {
-    try {
-      setError(null);
-      const { data } = await api.get('/api/tasks');
-      setTasks(data);
-    } catch (e) {
-      setError(
-        e.response?.data?.error || e.message || 'Failed to load tasks'
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    const es = new EventSource(`${SSE_BASE_URL}/api/tasks/live`);
+
+    es.onmessage = (e) => {
+      try {
+        const payload = JSON.parse(e.data);
+        switch (payload.event) {
+          case 'task.initial':
+            setTasks(payload.data);
+            setError(null);
+            setLoading(false);
+            break;
+          case 'task.created':
+            setTasks((prev) => {
+              if (prev.some((t) => t.id === payload.data.id)) return prev;
+              return [...prev, payload.data];
+            });
+            break;
+          case 'task.updated':
+            setTasks((prev) =>
+              prev.map((t) =>
+                t.id === payload.data.id ? payload.data : t
+              )
+            );
+            break;
+          case 'task.deleted':
+            setTasks((prev) => prev.filter((t) => t.id !== payload.data.id));
+            break;
+          default:
+            break;
+        }
+      } catch {
+        setError('Invalid live update payload');
+        setLoading(false);
+      }
+    };
+
+    es.onerror = () => {
+      setError(
+        (prev) => prev || 'Live connection failed'
+      );
+      setLoading(false);
+      es.close();
+    };
+
+    return () => {
+      es.close();
+    };
+  }, []);
 
   const handleToggle = (updatedTask) => {
     setTasks((prev) =>
