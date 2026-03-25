@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install backend dependencies
+        run: cd backend && npm install
+
+      - name: Start the backend server in the background
+        run: cd backend && npm start &
+
+      - name: Wait for the server to start
+        run: sleep 3
+
+      - name: Install test dependencies
+        run: cd tests && npm install
+
+      - name: Run the tests
+        run: cd tests && npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print deploy message
+        run: echo "All tests passed - safe to deploy"
+
+      - name: Print the current timestamp
+        run: date
