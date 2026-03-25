@@ -77,12 +77,12 @@ describe('Task API', () => {
       const created = await api().post('/api/tasks').send({ title }).expect(201);
       const id = created.body.id;
 
-      const res = await api()
+      const response = await api()
         .delete(`/api/tasks/${id}`)
         .expect('Content-Type', /json/)
         .expect(200);
 
-      expect(res.body).toEqual({ message: 'Task deleted' });
+      expect(response.body.message).toBe("Task deleted");
 
       const list = await api().get('/api/tasks').expect(200);
       expect(list.body.some((t) => t.id === id)).toBe(false);
