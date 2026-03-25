@@ -108,7 +108,7 @@ function App() {
             className={`tab-bar__btn${activeTab === 'news' ? ' tab-bar__btn--active' : ''}`}
             onClick={() => setActiveTab('news')}
           >
-            News Feed
+            Jimmy Butler News
           </button>
         </div>
         <h1 className="app-header__title">
@@ -116,7 +116,7 @@ function App() {
             'Tasks'
           ) : (
             <>
-              <span className="app-header__heading">News Feed</span>
+              <span className="app-header__heading">Jimmy Butler News</span>
               <span
                 className="app-header__countdown"
                 aria-live="polite"

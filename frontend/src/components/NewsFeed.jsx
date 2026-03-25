@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 const RSS_API =
-  'https://api.rss2json.com/v1/api.json?rss_url=https://news.ycombinator.com/rss';
+  'https://api.rss2json.com/v1/api.json?rss_url=https://www.basketball-reference.com/friv/rss.fcgi?playerid=butleji01';
 
 function stripHtml(html) {
   if (!html) return '';
